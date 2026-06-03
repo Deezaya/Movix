@@ -523,9 +523,7 @@ body {
     box-shadow: 0 0 10px var(--red-dim);
 }
 
-/* ══════════════════════════════════════
-   GENRE DROPDOWN MENU
-══════════════════════════════════════ */
+
 .genre-dropdown {
     position: relative;
 }
