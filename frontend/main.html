@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Movix</title>
+        <link rel="stylesheet" href="/static/main.css">
+    </head>
+    <body>
+
+        <nav class="navbar">
+            <div class="logo">
+                <img src="/static/logo.png" alt="Movix logo">
+                <h2>Movix</h2>
+            </div>
+            <div class="search-box">
+               <input type="text" id="searchInput" placeholder="Search movie....">
+            </div>
+            <div class="nav-links">
+                <button id="homeBtn" class="active">Home</button>
+                <div class="genre-dropdown" id="genreDropdown">
+                    <button class="nav-button" id="genreBtn">Genre ▼</button>
+                    <div class="genre-menu" id="genreMenu">
+                        <button onclick="searchByGenre('Action')">Action</button>
+                        <button onclick="searchByGenre('Romance')">Romance</button>
+                        <button onclick="searchByGenre('Horror')">Horror</button>
+                        <button onclick="searchByGenre('Comedy')">Comedy</button>
+                        <button onclick="searchByGenre('Thriller')">Thriller</button>
+                        <button onclick="searchByGenre('Sci-Fi')">Sci-Fi</button>
+                        <button onclick="searchByGenre('Animation')">Animation</button>
+                        <button onclick="searchByGenre('Drama')">Drama</button>
+                        <button onclick="searchByGenre('Crime')">Crime</button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <section class="hero-section" id="heroSection">
+            <h2>Discover amazing movies</h2>
+            <p>Search trending and popular movies instantly</p>
+        </section>
+
+        <div id="genreSections">
+            <section class="movies-section">
+                <h2 class="section-title">Popular Movies</h2>
+                <div id="moviescontainer" class="movies-row"></div>
+            </section>
+            <section class="movies-section">
+                <h2 class="section-title">Action</h2>
+                <div id="actioncontainer" class="movies-row"></div>
+            </section>
+            <section class="movies-section">
+                <h2 class="section-title">Romance</h2>
+                <div id="romancecontainer" class="movies-row"></div>
+            </section>
+            <section class="movies-section">
+                <h2 class="section-title">Horror</h2>
+                <div id="horrorcontainer" class="movies-row"></div>
+            </section>
+            <section class="movies-section">
+                <h2 class="section-title">Sci-Fi</h2>
+                <div id="scificontainer" class="movies-row"></div>
+            </section>
+            <section class="movies-section">
+                <h2 class="section-title">Animation</h2>
+                <div id="animationcontainer" class="movies-row"></div>
+            </section>
+        </div>
+
+        <section class="movies-section" id="searchResults" style="display:none;">
+            <div id="searchcontainer" class="movies-row"></div>
+        </section>
+
+        <script>
+            async function searchMovie() {
+                const query = document.getElementById("searchInput").value.trim();
+                if (query === "") { showHome(); return; }
+                const response = await fetch(`http://127.0.0.1:8000/search?movie=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                showSearchResults(data);
+            }
+
+            async function searchByGenre(genre) {
+                // Close dropdown, glow the genre button
+                closeDropdown();
+                document.getElementById("genreBtn").classList.add("active");
+                document.getElementById("homeBtn").classList.remove("active");
+                document.getElementById("searchInput").value = "";
+
+                const response = await fetch(`http://127.0.0.1:8000/search?movie=${encodeURIComponent(genre)}`);
+                const data = await response.json();
+                showSearchResults(data);
+            }
+
+            function showSearchResults(movies) {
+                document.getElementById("heroSection").style.display = "none";
+                document.getElementById("genreSections").style.display = "none";
+                document.getElementById("searchResults").style.display = "block";
+                document.getElementById("homeBtn").classList.remove("active");
+
+                const container = document.getElementById("searchcontainer");
+                container.innerHTML = "";
+                movies.forEach(movie => {
+                    container.innerHTML += `
+                        <div onclick="openMovie('${movie.imdbID}')">
+                            <img src="${movie.poster}">
+                            <h3>${movie.title}</h3>
+                            <p>${movie.year}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            function showHome() {
+                document.getElementById("heroSection").style.display = "block";
+                document.getElementById("genreSections").style.display = "block";
+                document.getElementById("searchResults").style.display = "none";
+                document.getElementById("searchInput").value = "";
+                document.getElementById("homeBtn").classList.add("active");
+                document.getElementById("genreBtn").classList.remove("active");
+            }
+
+            function openMovie(imdbID) {
+                localStorage.setItem("selectedMovie", imdbID);
+                window.location.href = "/detail";
+            }
+
+            // ── Genre dropdown toggle ──
+            document.getElementById("genreBtn").addEventListener("click", function(e) {
+                e.stopPropagation();
+                document.getElementById("genreMenu").classList.toggle("open");
+            });
+
+            function closeDropdown() {
+                document.getElementById("genreMenu").classList.remove("open");
+            }
+
+            document.addEventListener("click", closeDropdown);
+
+            document.getElementById("homeBtn").addEventListener("click", showHome);
+
+            let debounceTimer = null;
+            document.getElementById("searchInput").addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(searchMovie, 400);
+            });
+
+            document.getElementById("searchInput").addEventListener('keydown', function(event) {
+                if (event.key === "Enter") { clearTimeout(debounceTimer); searchMovie(); }
+            });
+
+            const genres = [
+                { id: "moviescontainer", movies: ["tt0111161","tt0068646","tt0468569","tt1375666","tt0816692","tt4154796","tt0245429","tt6751668"] },
+                { id: "actioncontainer", movies: ["tt0133093","tt0848228","tt2015381","tt3501632","tt0110912","tt0137523","tt0209144","tt1745960"] },
+                { id: "romancecontainer", movies: ["tt0120338","tt0381681","tt1454029","tt0094226","tt0112573","tt0758758","tt1840309","tt0364569"] },
+                { id: "horrorcontainer", movies: ["tt0081505","tt0083981","tt0107291","tt0259711","tt1457767","tt0435761","tt2267998","tt3170832"] },
+                { id: "scificontainer", movies: ["tt0076759","tt0080684","tt0083658","tt0088763","tt0103064","tt0169547","tt1630029","tt0770828"] },
+                { id: "animationcontainer", movies: ["tt0245429","tt0317705","tt0266543","tt0435761","tt2096673","tt2294629","tt1979376","tt0892769"] },
+            ];
+
+            async function loadGenre(containerId, movieIds) {
+                const results = await Promise.all(
+                    movieIds.map(id =>
+                        fetch(`http://127.0.0.1:8000/movie/${id}`)
+                            .then(res => res.json())
+                            .then(movie => ({ title: movie.Title, year: movie.Year, poster: movie.Poster, imdbID: movie.imdbID }))
+                    )
+                );
+                const container = document.getElementById(containerId);
+                container.innerHTML = "";
+                results.forEach(movie => {
+                    container.innerHTML += `
+                        <div onclick="openMovie('${movie.imdbID}')">
+                            <img src="${movie.poster}">
+                            <h3>${movie.title}</h3>
+                            <p>${movie.year}</p>
+                        </div>
+                    `;
+                });
+            }
+
+            genres.forEach(genre => loadGenre(genre.id, genre.movies));
+        </script>
+    </body>
+</html>

@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Movix - Movie Detail</title>
+    <link rel="stylesheet" href="/static/main.css">
+    <style>
+        /* ── DETAIL PAGE SPECIFIC STYLES ── */
+
+        /* Blurred poster background */
+        .detail-bg {
+            position: fixed;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            filter: blur(60px) brightness(0.25) saturate(1.4);
+            transform: scale(1.1);
+            z-index: 0;
+            transition: background-image 0.6s ease;
+        }
+
+        .detail-page {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── HERO SECTION: poster + info ── */
+        .detail-hero {
+            display: flex;
+            gap: 48px;
+            padding: 48px 48px 40px;
+            align-items: flex-start;
+        }
+
+        /* Poster */
+        .detail-poster-wrap {
+            flex-shrink: 0;
+            width: 260px;
+        }
+
+        .detail-poster-wrap img {
+            width: 100%;
+            border-radius: 16px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.8), 0 0 0 1px var(--border);
+            display: block;
+        }
+
+        /* Info */
+        .detail-info {
+            flex: 1;
+            padding-top: 8px;
+        }
+
+        .detail-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: clamp(36px, 5vw, 64px);
+            letter-spacing: 3px;
+            line-height: 1;
+            margin-bottom: 12px;
+            background: linear-gradient(180deg, #ffffff 0%, #cccccc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .detail-meta {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+            font-family: 'DM Mono', monospace;
+            font-size: 12px;
+            color: var(--muted);
+            letter-spacing: 1px;
+        }
+
+        .detail-meta span {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-meta .divider {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--muted);
+        }
+
+        /* Star rating */
+        .detail-stars {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stars {
+            display: flex;
+            gap: 3px;
+        }
+
+        .star {
+            font-size: 18px;
+            color: var(--dim);
+        }
+
+        .star.filled {
+            color: var(--gold);
+            filter: drop-shadow(0 0 4px rgba(201, 168, 76, 0.5));
+        }
+
+        .star.half {
+            position: relative;
+            color: var(--dim);
+        }
+
+        .star.half::before {
+            content: '★';
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            width: 50%;
+            overflow: hidden;
+            filter: drop-shadow(0 0 4px rgba(201, 168, 76, 0.5));
+        }
+
+        .rating-number {
+            font-family: 'DM Mono', monospace;
+            font-size: 13px;
+            color: var(--gold);
+            letter-spacing: 1px;
+        }
+
+        /* Genre tags */
+        .detail-genres {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .genre-tag {
+            padding: 5px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px solid;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .genre-tag:hover { opacity: 0.75; }
+
+        /* Genre tag colors */
+        .genre-tag:nth-child(1) { color: #ff6b6b; border-color: #ff6b6b; background: rgba(255,107,107,0.1); }
+        .genre-tag:nth-child(2) { color: #ffd93d; border-color: #ffd93d; background: rgba(255,217,61,0.1); }
+        .genre-tag:nth-child(3) { color: #6bcb77; border-color: #6bcb77; background: rgba(107,203,119,0.1); }
+        .genre-tag:nth-child(4) { color: #4d96ff; border-color: #4d96ff; background: rgba(77,150,255,0.1); }
+        .genre-tag:nth-child(5) { color: #c77dff; border-color: #c77dff; background: rgba(199,125,255,0.1); }
+
+        /* Plot */
+        .detail-plot {
+            font-size: 14px;
+            line-height: 1.7;
+            color: rgba(240,240,240,0.8);
+            margin-bottom: 24px;
+            max-width: 560px;
+        }
+
+        /* Director + Cast */
+        .detail-credits {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .credit-row {
+            display: flex;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        .credit-label {
+            font-family: 'DM Mono', monospace;
+            font-size: 11px;
+            color: var(--red);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            min-width: 70px;
+            padding-top: 2px;
+        }
+
+        .credit-value {
+            color: var(--muted);
+            line-height: 1.5;
+        }
+
+        /* ── MORE LIKE THIS ── */
+        .more-like-this {
+            padding: 0 48px 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius);
+            aspect-ratio: 2/3;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .detail-hero {
+                flex-direction: column;
+                padding: 24px 20px;
+                gap: 24px;
+            }
+
+            .detail-poster-wrap {
+                width: 160px;
+            }
+
+            .more-like-this {
+                padding: 0 20px 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Blurred bg -->
+    <div class="detail-bg" id="detailBg"></div>
+
+    <div class="detail-page">
+        <nav class="navbar">
+            <div class="logo">
+                <img src="/static/logo.png" alt="Movix logo">
+                <h2>Movix</h2>
+            </div>
+            <a href="/" class="back-btn">← Home</a>
+        </nav>
+
+        <!-- Hero: poster + info -->
+        <div class="detail-hero" id="detailHero">
+            <div class="empty-state">Loading...</div>
+        </div>
+
+        <!-- More Like This -->
+        <section class="more-like-this">
+            <h2 class="section-title">More Like This</h2>
+            <div id="moreLikeThis" class="movies-row">
+                <!-- skeletons while loading -->
+                ${Array(6).fill('<div class="skeleton"></div>').join('')}
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const imdbID = localStorage.getItem("selectedMovie");
+        if (!imdbID) window.location.href = "/";
+
+        // Convert IMDB rating (0-10) to stars (0-5)
+        function buildStars(rating) {
+            const score = parseFloat(rating);
+            if (isNaN(score)) return '<span style="color:var(--muted);font-size:12px;">N/A</span>';
+
+            const out5 = score / 2;
+            let html = '<div class="stars">';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= Math.floor(out5)) {
+                    html += '<span class="star filled">★</span>';
+                } else if (i - out5 < 1 && i - out5 > 0) {
+                    html += '<span class="star half">★</span>';
+                } else {
+                    html += '<span class="star">★</span>';
+                }
+            }
+            html += '</div>';
+            return html;
+        }
+
+        // Build colored genre tags
+        function buildGenreTags(genreString) {
+            if (!genreString || genreString === 'N/A') return '';
+            return genreString.split(',').map(g => 
+                `<span class="genre-tag">${g.trim()}</span>`
+            ).join('');
+        }
+
+        async function loadMovie() {
+            try {
+                const res = await fetch(`http://127.0.0.1:8000/movie/${imdbID}`);
+                const movie = await res.json();
+                displayMovie(movie);
+                loadMoreLikeThis(movie.Genre);
+            } catch (e) {
+                document.getElementById("detailHero").innerHTML = 
+                    '<div class="empty-state">Could not load movie. Is the server running?</div>';
+            }
+        }
+
+        function displayMovie(movie) {
+            const poster = movie.Poster !== "N/A" ? movie.Poster : "/static/no-poster.png";
+
+            // Set blurred background
+            document.getElementById("detailBg").style.backgroundImage = `url('${poster}')`;
+
+            document.getElementById("detailHero").innerHTML = `
+                <div class="detail-poster-wrap">
+                    <img src="${poster}" alt="${movie.Title}">
+                </div>
+                <div class="detail-info">
+                    <h1 class="detail-title">${movie.Title}</h1>
+                    <div class="detail-meta">
+                        <span>${movie.Year}</span>
+                        <div class="divider"></div>
+                        <span>${movie.Runtime}</span>
+                        <div class="divider"></div>
+                        <span>${movie.Rated}</span>
+                    </div>
+                    <div class="detail-stars">
+                        ${buildStars(movie.imdbRating)}
+                        <span class="rating-number">${movie.imdbRating}/10</span>
+                    </div>
+                    <div class="detail-genres">
+                        ${buildGenreTags(movie.Genre)}
+                    </div>
+                    <p class="detail-plot">${movie.Plot}</p>
+                    <div class="detail-credits">
+                        <div class="credit-row">
+                            <span class="credit-label">Director</span>
+                            <span class="credit-value">${movie.Director}</span>
+                        </div>
+                        <div class="credit-row">
+                            <span class="credit-label">Cast</span>
+                            <span class="credit-value">${movie.Actors}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function loadMoreLikeThis(genreString) {
+            if (!genreString || genreString === 'N/A') return;
+
+            // Use the first genre for the search
+            const firstGenre = genreString.split(',')[0].trim();
+
+            try {
+                const res = await fetch(`http://127.0.0.1:8000/search?movie=${encodeURIComponent(firstGenre)}`);
+                const movies = await res.json();
+
+                const container = document.getElementById("moreLikeThis");
+                container.innerHTML = "";
+
+                // Filter out the current movie
+                const filtered = movies.filter(m => m.imdbID !== imdbID).slice(0, 8);
+
+                if (filtered.length === 0) {
+                    container.innerHTML = '<div class="empty-state">No similar movies found.</div>';
+                    return;
+                }
+
+                filtered.forEach(movie => {
+                    const poster = movie.poster !== "N/A" ? movie.poster : "/static/no-poster.png";
+                    container.innerHTML += `
+                        <div onclick="openMovie('${movie.imdbID}')">
+                            <img src="${poster}" alt="${movie.title}">
+                            <h3>${movie.title}</h3>
+                            <p>${movie.year}</p>
+                        </div>
+                    `;
+                });
+            } catch (e) {
+                document.getElementById("moreLikeThis").innerHTML = '';
+            }
+        }
+
+        function openMovie(id) {
+            localStorage.setItem("selectedMovie", id);
+            window.location.reload();
+        }
+
+        loadMovie();
+    </script>
+</body>
+</html>
